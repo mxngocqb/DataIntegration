@@ -1,0 +1,102 @@
+version: '3.8'
+
+services:
+  hadoop-namenode:
+    image: bde2020/hadoop-namenode:2.0.0-hadoop3.2.1-java8
+    container_name: hadoop-namenode
+    hostname: namenode
+    environment:
+      - CLUSTER_NAME=hadoop-cluster
+    ports:
+      - "9870:9870"  # Web UI for HDFS Namenode
+      - "9000:9000"  # Namenode RPC
+    volumes:
+      - namenode_data:/hadoop/dfs/name
+    networks:
+      - bigdata_network
+
+  hadoop-datanode:
+    image: bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8
+    container_name: hadoop-datanode
+    hostname: datanode
+    environment:
+      - CLUSTER_NAME=hadoop-cluster
+      - CORE_CONF_fs_defaultFS=hdfs://namenode:9000
+    volumes:
+      - datanode_data:/hadoop/dfs/data
+    networks:
+      - bigdata_network
+    depends_on:
+      - hadoop-namenode
+
+  hive-metastore-db:
+    image: mysql:5.7
+    container_name: hive-metastore-db
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: metastore
+      MYSQL_USER: hiveuser
+      MYSQL_PASSWORD: hivepassword
+    ports:
+      - "3306:3306"
+    volumes:
+      - metastore_db:/var/lib/mysql
+    networks:
+      - bigdata_network
+
+  hive-metastore:
+    image: bde2020/hive:latest
+    container_name: hive-metastore
+    hostname: metastore
+    environment:
+      - HIVE_METASTORE_DB_TYPE=mysql
+      - HIVE_METASTORE_HOST=hive-metastore-db
+      - HIVE_METASTORE_USER=hiveuser
+      - HIVE_METASTORE_PASSWORD=hivepassword
+      - HIVE_METASTORE_DB=metastore
+    depends_on:
+      - hadoop-namenode
+      - hive-metastore-db
+    networks:
+      - bigdata_network
+
+  hive-server:
+    image: bde2020/hive:latest
+    container_name: hive-server
+    hostname: hive-server
+    environment:
+      - HIVE_METASTORE_HOST=metastore
+      - HIVE_EXECUTION_ENGINE=mr
+      - HADOOP_HEAPSIZE=1024
+    ports:
+      - "10000:10000"  # HiveServer2 Thrift
+      - "10002:10002"  # Web UI for HiveServer2
+    depends_on:
+      - hive-metastore
+    networks:
+      - bigdata_network
+
+  nifi:
+    image: apache/nifi:1.16.0  # Use the latest NiFi Docker image
+    container_name: nifi
+    ports:
+      - "8080:8080"  # Map the NiFi HTTP port inside the container to port 8080 on the host machine
+    environment:
+      - NIFI_WEB_HTTPS_PORT=8080  # NiFi is listening on port 8080 for HTTP access
+      - NIFI_WEB_PROXY_HOST=https://localhost:8080  # Set the proxy host to ensure correct URL generation
+      - SINGLE_USER_CREDENTIALS_USERNAME=admin  # Single user credentials for the NiFi UI
+      - SINGLE_USER_CREDENTIALS_PASSWORD=ctsBtRBKHRAx69EqUghvvgEvjnaLjFEB  # Single user password
+      - NIFI_ADMIN_ACCESS_PROVIDER=single-user-provider  # Use the single user provider
+    volumes:
+      - ./nifi_templates:/opt/nifi/nifi-current/templates
+    networks:
+      - bigdata_network  # Use the same network as the Hadoop/Hive stack
+
+volumes:
+  namenode_data:
+  datanode_data:
+  metastore_db:
+
+networks:
+  bigdata_network:
+    driver: bridge

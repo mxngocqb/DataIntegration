@@ -3,13 +3,19 @@ version: '3.8'
 services:
   hadoop-namenode:
     image: bde2020/hadoop-namenode:2.0.0-hadoop3.2.1-java8
-    container_name: hadoop-namenode
+    container_name: namenode
     hostname: namenode
-    environment:
-      - CLUSTER_NAME=hadoop-cluster
     ports:
-      - "9870:9870"  # Web UI for HDFS Namenode
-      - "9000:9000"  # Namenode RPC
+      - 9870:9870
+    environment:
+      - CLUSTER_NAME=stock
+    env_file:
+      - ./Configs/HadoopConfig/hadoop.env
+    deploy:
+      mode: replicated
+      replicas: 1
+      restart_policy:
+        condition: on-failure
     volumes:
       - namenode_data:/hadoop/dfs/name
     networks:
@@ -17,13 +23,41 @@ services:
 
   hadoop-datanode:
     image: bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8
-    container_name: hadoop-datanode
-    hostname: datanode
+    container_name: datanode-1
+    hostname: datanode-1
+    ports:
+      - 9864:9864
     environment:
-      - CLUSTER_NAME=hadoop-cluster
-      - CORE_CONF_fs_defaultFS=hdfs://namenode:9000
+      - SERVICE_PRECONDITION=namenode:9870
+    env_file:
+      - ./Configs/HadoopConfig/hadoop.env
+    deploy:
+      mode: global
+      restart_policy:
+        condition: on-failure
     volumes:
       - datanode_data:/hadoop/dfs/data
+    networks:
+      - bigdata_network
+    depends_on:
+      - hadoop-namenode
+  
+  hadoop-datanode-2:
+    image: bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8
+    container_name: datanode-2
+    hostname: datanode-2
+    ports:
+      - 19864:9864
+    environment:
+      - SERVICE_PRECONDITION=namenode:9870
+    env_file:
+      - ./Configs/HadoopConfig/hadoop.env
+    deploy:
+      mode: global
+      restart_policy:
+        condition: on-failure
+    volumes:
+      - datanode2_data:/hadoop/dfs/data
     networks:
       - bigdata_network
     depends_on:
@@ -80,10 +114,10 @@ services:
     image: apache/nifi:1.16.0  # Use the latest NiFi Docker image
     container_name: nifi
     ports:
-      - "8080:8080"  # Map the NiFi HTTP port inside the container to port 8080 on the host machine
+      - "8443:8443"  # Map the NiFi HTTP port inside the container to port 8443 on the host machine
     environment:
-      - NIFI_WEB_HTTPS_PORT=8080  # NiFi is listening on port 8080 for HTTP access
-      - NIFI_WEB_PROXY_HOST=https://localhost:8080  # Set the proxy host to ensure correct URL generation
+      - NIFI_WEB_HTTPS_PORT=8443  # NiFi is listening on port 8443 for HTTP access
+      - NIFI_WEB_PROXY_HOST=26.243.250.90:8443  # Set the proxy host to ensure correct URL generation
       - SINGLE_USER_CREDENTIALS_USERNAME=admin  # Single user credentials for the NiFi UI
       - SINGLE_USER_CREDENTIALS_PASSWORD=ctsBtRBKHRAx69EqUghvvgEvjnaLjFEB  # Single user password
       - NIFI_ADMIN_ACCESS_PROVIDER=single-user-provider  # Use the single user provider
@@ -95,6 +129,7 @@ services:
 volumes:
   namenode_data:
   datanode_data:
+  datanode2_data:
   metastore_db:
 
 networks:

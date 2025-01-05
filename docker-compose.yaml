@@ -10,7 +10,7 @@ services:
     environment:
       - CLUSTER_NAME=stock
     env_file:
-      - ./Configs/HadoopConfig/hadoop.env
+      - ./Configs/Hadoop/hadoop.env
     deploy:
       mode: replicated
       replicas: 1
@@ -30,7 +30,7 @@ services:
     environment:
       - SERVICE_PRECONDITION=namenode:9870
     env_file:
-      - ./Configs/HadoopConfig/hadoop.env
+      - ./Configs/Hadoop/hadoop.env
     deploy:
       mode: global
       restart_policy:
@@ -51,7 +51,7 @@ services:
     environment:
       - SERVICE_PRECONDITION=namenode:9870
     env_file:
-      - ./Configs/HadoopConfig/hadoop.env
+      - ./Configs/Hadoop/hadoop.env
     deploy:
       mode: global
       restart_policy:
@@ -72,7 +72,7 @@ services:
       - NIFI_WEB_HTTPS_PORT=8443  # NiFi is listening on port 8443 for HTTP access
       - NIFI_WEB_PROXY_HOST=26.243.250.90:8443  # Set the proxy host to ensure correct URL generation
       - SINGLE_USER_CREDENTIALS_USERNAME=admin  # Single user credentials for the NiFi UI
-      - SINGLE_USER_CREDENTIALS_PASSWORD=ctsBtRBKHRAx69EqUghvvgEvjnaLjFEB  # Single user password
+      - SINGLE_USER_CREDENTIALS_PASSWORD=admin  # Single user password
       - NIFI_ADMIN_ACCESS_PROVIDER=single-user-provider  # Use the single user provider
     volumes:
       - ./nifi_templates:/opt/nifi/nifi-current/templates

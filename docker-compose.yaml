@@ -36,7 +36,7 @@ services:
       - bigdata_network
 
   nifi:
-    image: apache/nifi:latest
+    image: apache/nifi:1.28.1 #lastest for version1 
     container_name: nifi
     hostname: nifi
     ports:
@@ -102,8 +102,8 @@ services:
 
   hadoop-datanode:
     image: bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8
-    container_name: datanode_1
-    hostname: datanode_1
+    container_name: datanode-1
+    hostname: datanode-1
     ports:
       - 9864:9864
     environment:
@@ -123,8 +123,8 @@ services:
   
   hadoop-datanode-2:
     image: bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8
-    container_name: datanode_2
-    hostname: datanode_2
+    container_name: datanode-2
+    hostname: datanode-2
     ports:
       - 19864:9864
     environment:
@@ -143,7 +143,7 @@ services:
       - hadoop-namenode
       
   elasticsearch:
-    container_name: es_container
+    container_name: escontainer
     hostname: elasticsearch
     image: docker.elastic.co/elasticsearch/elasticsearch:8.12.2
     environment:
@@ -161,7 +161,7 @@ services:
     hostname: kibana
     image: docker.elastic.co/kibana/kibana:8.12.2
     environment:
-      - ELASTICSEARCH_HOSTS=http://es_container:9200
+      - ELASTICSEARCH_HOSTS=http://escontainer:9200
     depends_on:
       - elasticsearch
     ports:

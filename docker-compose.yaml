@@ -1,3 +1,23 @@
+x-kafka-common: &kafka-common
+  image: bitnami/kafka:latest
+  restart: unless-stopped
+
+x-kafka-env-common: &kafka-env-common
+  # kRaft
+  KAFKA_KRAFT_CLUSTER_ID: dwh_etl_kraft
+  KAFKA_CFG_PROCESS_ROLES: broker,controller
+  KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: 1@kaf1:9093,2@kaf2:9093 #<< edit if add more to cluster
+
+  # Listeners
+  KAFKA_CFG_LISTENERS: CONTROLLER://:9093,PLAINTEXT://:9092
+  KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://:9092
+  KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT
+  KAFKA_CFG_CONTROLLER_LISTENER_NAMES: CONTROLLER
+  KAFKA_CFG_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+  
+  # Cluster
+  ALLOW_PLAINTEXT_LISTENER: 'yes'
+
 services:
   postgres:
     image: postgres:latest
@@ -31,6 +51,34 @@ services:
       - nifi_vol:/opt/nifi/nifi-current/templates
     networks:
       - bigdata_network  # Use the same network as the Hadoop/Hive stack
+
+  kafka-1:
+    <<: *kafka-common
+    container_name: kaf1
+    hostname: kaf1
+    ports:
+      - 9092:9092
+    environment:
+      <<: *kafka-env-common
+      KAFKA_CFG_NODE_ID: 1
+    volumes:
+      - kaf_vol1:/bitnami/kafka
+    networks:
+      - bigdata_network  
+
+  kafka-2:
+    <<: *kafka-common
+    container_name: kaf2
+    hostname: kaf2
+    ports:
+      - 9093:9092
+    environment:
+      <<: *kafka-env-common
+      KAFKA_CFG_NODE_ID: 2
+    volumes:
+      - kaf_vol2:/bitnami/kafka
+    networks:
+      - bigdata_network  
       
   hadoop-namenode:
     image: bde2020/hadoop-namenode:2.0.0-hadoop3.2.1-java8

@@ -36,15 +36,14 @@ services:
       - bigdata_network
 
   nifi:
-    image: apache/nifi:1.16.0 #lastest for version1 
+    image: apache/nifi:1.16.0 #lastest for version1
     container_name: nifi
     hostname: nifi
     ports:
       - "8443:8443"  # Map the NiFi HTTP port inside the container to port 8443 on the host machine
     environment:
-      - JAVA_OPTS=-Xms4g -Xmx8g
       - NIFI_WEB_HTTPS_PORT=8443  # NiFi is listening on port 8443 for HTTP access
-      - NIFI_WEB_PROXY_HOST=26.243.250.90:8443  # Set the proxy host to ensure correct URL generation
+      - NIFI_WEB_PROXY_HOST=https://localhost:8443  # Set the proxy host to ensure correct URL generation
       - SINGLE_USER_CREDENTIALS_USERNAME=admin  # Single user credentials for the NiFi UI
       - SINGLE_USER_CREDENTIALS_PASSWORD=ctsBtRBKHRAx69EqUghvvgEvjnaLjFEB  # Single user password
       - NIFI_ADMIN_ACCESS_PROVIDER=single-user-provider  # Use the single user provider
@@ -52,30 +51,14 @@ services:
       - nifi_vol:/opt/nifi/nifi-current/templates
     networks:
       - bigdata_network  # Use the same network as the Hadoop/Hive stack
-  nifi2:
-    image: apache/nifi:1.16.0 #lastest for version1
-    container_name: nifi2
-    hostname: nifi2
-    ports:
-      - "8444:8444"  # Map the NiFi HTTP port inside the container to port 8443 on the host machine
-    environment:
-      - JAVA_OPTS=-Xms2g -Xmx4g
-      - NIFI_WEB_HTTPS_PORT=8444  # NiFi is listening on port 8443 for HTTP access
-      - NIFI_WEB_PROXY_HOST=26.243.250.90:8444  # Set the proxy host to ensure correct URL generation
-      - SINGLE_USER_CREDENTIALS_USERNAME=admin  # Single user credentials for the NiFi UI
-      - SINGLE_USER_CREDENTIALS_PASSWORD=ctsBtRBKHRAx69EqUghvvgEvjnaLjFEB  # Single user password
-      - NIFI_ADMIN_ACCESS_PROVIDER=single-user-provider  # Use the single user provider
-    volumes:
-      - nifi_vol2:/opt/nifi/nifi-current/templates
-    networks:
-      - bigdata_network  # Use the same network as the Hadoop/Hive stack
+
   kafka-1:
     <<: *kafka-common
     container_name: kaf1
     hostname: kaf1
     ports:
       - 9092:9092
-    environment:  
+    environment:
       <<: *kafka-env-common
       KAFKA_CFG_NODE_ID: 1
     volumes:
@@ -119,8 +102,8 @@ services:
 
   hadoop-datanode:
     image: bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8
-    container_name: datanode-1
-    hostname: datanode-1
+    container_name: datanode_1
+    hostname: datanode_1
     ports:
       - 9864:9864
     environment:
@@ -140,8 +123,8 @@ services:
   
   hadoop-datanode-2:
     image: bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8
-    container_name: datanode-2
-    hostname: datanode-2
+    container_name: datanode_2
+    hostname: datanode_2
     ports:
       - 19864:9864
     environment:
@@ -160,7 +143,7 @@ services:
       - hadoop-namenode
       
   elasticsearch:
-    container_name: escontainer
+    container_name: es_container
     hostname: elasticsearch
     image: docker.elastic.co/elasticsearch/elasticsearch:8.12.2
     environment:
@@ -178,7 +161,7 @@ services:
     hostname: kibana
     image: docker.elastic.co/kibana/kibana:8.12.2
     environment:
-      - ELASTICSEARCH_HOSTS=http://escontainer:9200
+      - ELASTICSEARCH_HOSTS=http://es_container:9200
     depends_on:
       - elasticsearch
     ports:
@@ -186,38 +169,9 @@ services:
     networks:
       - bigdata_network
 
-  producer:
-    build:
-      context: ./Producer
-      dockerfile: Dockerfile
-    depends_on:
-      - kafka-1
-      - kafka-2
-    environment:
-      KAFKA_BROKER: kafka-1:9092
-    volumes:
-      - ./producer.py:/app/producer_script.py
-    networks:
-      - bigdata_network
-
-  consumer:
-    build:
-      context: ./Comsumer
-      dockerfile: Dockerfile
-    depends_on:
-      - kafka-1
-      - kafka-2
-    environment:
-      KAFKA_BROKER: kafka-1:9092
-    volumes:
-      - ./consumer.py:/app/consumer_script.py
-    networks:
-      - bigdata_network
-
 volumes:
   pg_vol:
   nifi_vol:
-  nifi_vol2:
   kaf_vol1:
   kaf_vol2:
   namenode_vol:

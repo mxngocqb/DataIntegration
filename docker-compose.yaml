@@ -36,7 +36,7 @@ services:
       - bigdata_network
 
   nifi:
-    image: apache/nifi:latest
+    image: apache/nifi:1.16.0 #lastest for version1
     container_name: nifi
     hostname: nifi
     ports:
@@ -89,7 +89,7 @@ services:
     environment:
       - CLUSTER_NAME=stock
     env_file:
-      - ./Configs/HadoopConfig/hadoop.env
+      - ./Configs/Hadoop/hadoop.env
     deploy:
       mode: replicated
       replicas: 1
@@ -109,7 +109,7 @@ services:
     environment:
       - SERVICE_PRECONDITION=namenode:9870
     env_file:
-      - ./Configs/HadoopConfig/hadoop.env
+      - ./Configs/Hadoop/hadoop.env
     deploy:
       mode: global
       restart_policy:
@@ -130,7 +130,7 @@ services:
     environment:
       - SERVICE_PRECONDITION=namenode:9870
     env_file:
-      - ./Configs/HadoopConfig/hadoop.env
+      - ./Configs/Hadoop/hadoop.env
     deploy:
       mode: global
       restart_policy:
@@ -141,7 +141,7 @@ services:
       - bigdata_network
     depends_on:
       - hadoop-namenode
-
+      
   elasticsearch:
     container_name: es_container
     hostname: elasticsearch
